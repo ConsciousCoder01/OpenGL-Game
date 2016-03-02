@@ -21,7 +21,7 @@ void *fonts[] =
 	GLUT_BITMAP_8_BY_13,
 	GLUT_BITMAP_TIMES_ROMAN_10,
 	GLUT_BITMAP_TIMES_ROMAN_24
-};
+}; 
 
 GLubyte ship[] = 
 {
@@ -45,7 +45,7 @@ GLubyte ship[] =
         0xAA, 0xAA, 0xAA, 0xAA, 0x55, 0x55, 0x55, 0x55
 };
 
-// draw functions
+// <-- draw functions -->
 void displayFirst();// initial display of objects on screen
 void init(); // initializes window
 void handleButton(int button, int state, int x, int y); // handler for button actions
@@ -68,7 +68,7 @@ void displayTextSmall(float x, float y, int r, int g, int b, const char *string)
 void restartLvl();
 void initLevel(); // setup level before it starts
 
-// update functions
+// <-- update functions -->
 void update(int i);
 void updateEntities();
 void updateEnergyEntities();
@@ -76,12 +76,12 @@ void updateBulletEntities();
 void updateEnemyEntities();
 void updateParticleEntities();
 
-// input functions
+// --> input functions <--
 void processNormalKeys(unsigned char key, int mx, int my);
 void processSpecialKeys(int key, int mx, int my);
 void shoot(); // fire projectile
 
-// star functions
+// <-- star functions -->
 void visible(int state);
 void idle();
 float cosAngle(float angle);
@@ -96,7 +96,7 @@ static GLfloat deltaz = .001;// change in z
 static GLfloat playerX = 380.0; // player charcter position x
 static GLfloat playerY = 458.0; // player charcter position y
 
-// level/ misc
+// --> level/ misc <--
 bool hasGameStarted = false;
 bool animGroundColor = false;
 
@@ -174,7 +174,6 @@ Alien alienEntities[6];
 RGB rgb[5];
 
 // star variables
-
 #define MAXSTARS 150
 #define MAXPOS 10000
 #define MAXWARP 2
@@ -219,15 +218,15 @@ int main(int argc, char *argv[])
 	init();// init projection/camera
 
 	initLevel(); // init game/level before start
-	glutTimerFunc( 1000/60, update , 1);
+	glutTimerFunc(1000 / 60, update , 1);
 	glutMainLoop();//should be last func called in main. Causes program to enter an infinite loop
 
 	return 0;
 }
 
-/*******************************************
-	Init display func when game first starts
-********************************************/
+/**************************************************
+	-->Init display func when game first starts<--
+***************************************************/
 void displayFirst()
 {
 	glClear(GL_COLOR_BUFFER_BIT);// clears all buffers whose bits are set in mask
@@ -315,15 +314,15 @@ void drawGUI()
 	displayTextSmall(590, 18, 1, 1, 1, "Energy");
 
 	// Display current player score to screen
-	displayTextLarge(20, 480, 1, 1, 1, "Score: ");
+	displayTextLarge(260, 20, 1, 1, 1, "Score: ");
 	char scoreStr[15];
 	sprintf_s(scoreStr, "%d", score);// cast score to new char array variable
-	displayTextLarge(88, 480, 1, 1, 1, scoreStr);
+	displayTextLarge(328, 20, 1, 1, 1, scoreStr);
 
 	if(health <= 0)
 	{
-		displayTextLarge(220, 20, 1, 1, 1, "Game Over!..");
-		displayTextLarge(10, 60, 1, 1, 1, "Press E to restart level, tap an arrow key to begin that new Level");
+		displayTextLarge(220, 60, 1, 1, 1, "Game Over!..");
+		displayTextLarge(10, 120, 1, 1, 1, "Press E to restart level, tap an arrow key to begin that new Level");
 	}
 }
 
