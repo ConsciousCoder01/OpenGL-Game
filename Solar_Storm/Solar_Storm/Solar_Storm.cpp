@@ -1,5 +1,8 @@
 // SolarStorm.cpp
 // Solar Storm By: Chris Galletta
+/* 
+	About: This is a student project for my opengl class, forced to use restricted pipeline by professor.
+*/
 
 #include "stdafx.h"
 #include <iostream>
@@ -14,13 +17,14 @@ using namespace std;
 const int height = 480; // window height
 const int width = 720; // window width
 
-void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+void *font = GLUT_BITMAP_HELVETICA_18;
 void *fonts[] =
 {
 	GLUT_BITMAP_9_BY_15,
 	GLUT_BITMAP_8_BY_13,
 	GLUT_BITMAP_TIMES_ROMAN_10,
-	GLUT_BITMAP_TIMES_ROMAN_24
+	GLUT_BITMAP_TIMES_ROMAN_24,
+	GLUT_BITMAP_HELVETICA_18
 }; 
 
 GLubyte ship[] = 
@@ -76,7 +80,7 @@ void updateBulletEntities();
 void updateEnemyEntities();
 void updateParticleEntities();
 
-// --> input functions <--
+// <-- input functions -->
 void processNormalKeys(unsigned char key, int mx, int my);
 void processSpecialKeys(int key, int mx, int my);
 void shoot(); // fire projectile
@@ -96,12 +100,13 @@ static GLfloat deltaz = .001;// change in z
 static GLfloat playerX = 380.0; // player charcter position x
 static GLfloat playerY = 458.0; // player charcter position y
 
-// --> level/ misc <--
+// <-- level/ misc -->
 bool hasGameStarted = false;
 bool animGroundColor = false;
 
-// Player variables
-GLint health = 20;
+// <-- Player variables -->
+GLint health = 5;
+GLint shieldAmt = 20;
 int shipEnergy = 20;
 
 int amtBullets = 0; // total amount of pellets a player can eat in the level
@@ -167,14 +172,14 @@ struct Particle
 Bullet bulletEntities[35]; // store pellets and their positions in level
 Lane lanes[5];
 Lane oppLanes[5];
-Particle particleEntities[16];
+Particle particleEntities[20];
 Energy energyEntities[10];
 Comet cometEntities[12];
 Alien alienEntities[6];
 RGB rgb[5];
 
 // star variables
-#define MAXSTARS 150
+#define MAXSTARS 75
 #define MAXPOS 10000
 #define MAXWARP 2
 #define MAXANGLES 6000
@@ -218,15 +223,15 @@ int main(int argc, char *argv[])
 	init();// init projection/camera
 
 	initLevel(); // init game/level before start
-	glutTimerFunc(1000 / 60, update , 1);
+	glutTimerFunc(1000 / 60, update, 1);
 	glutMainLoop();//should be last func called in main. Causes program to enter an infinite loop
 
 	return 0;
 }
 
-/**************************************************
-	-->Init display func when game first starts<--
-***************************************************/
+/****************************************************
+	<-- Init display func when game first starts -->
+****************************************************/
 void displayFirst()
 {
 	glClear(GL_COLOR_BUFFER_BIT);// clears all buffers whose bits are set in mask
@@ -245,7 +250,7 @@ void displayFirst()
 }
 
 /***************************************************
-	Draw enemy alien ship entities
+	<-- Draw enemy alien ship entities -->
 ****************************************************/
 void drawAliens()
 {
@@ -288,21 +293,35 @@ void drawAliens()
 	}
 }
 
-/***************************************************
-	Display players score and other information
-****************************************************/
+/*******************************************************
+	<-- Display players score and other information -->
+*******************************************************/
 void drawGUI()
 {
+	// --> Shields bar <--
 	glColor3f(1.0,1.0,1.0);
 	glBegin(GL_POLYGON);
 		glVertex2i(22, 0);
 		glVertex2i(22, 10);
-		glVertex2i(22 + health * 4, 10);
-		glVertex2i(22 + health * 4, 0);
+		glVertex2i(22 + shieldAmt * 4, 10);
+		glVertex2i(22 + shieldAmt * 4, 0);
 	glEnd();
 
 	displayTextSmall(25, 23, 1, 1, 1, "Shields");
 
+	// --> Health bar <--
+	glColor3f(1.0, 0.0, 0.0);
+	glBegin(GL_POLYGON);
+	glVertex2i(162, 0);
+	glVertex2i(162, 10);
+	glVertex2i(162 + health * 2, 10);
+	glVertex2i(162 + health * 2, 0);
+	glEnd();
+
+	displayTextSmall(165, 23, 1, 1, 1, "Health");
+
+
+	// --> Energy bar <--
 	glColor3f(0.0,1.0,0.0);
 	glBegin(GL_POLYGON);
 		glVertex2i(582, 0);
@@ -311,13 +330,15 @@ void drawGUI()
 		glVertex2i(582 + shipEnergy * 4, 0);
 	glEnd();
 
-	displayTextSmall(590, 18, 1, 1, 1, "Energy");
+	displayTextSmall(590, 24, 1, 1, 1, "Energy");
 
-	// Display current player score to screen
+	// --> Display current player score to screen <--
 	displayTextLarge(260, 20, 1, 1, 1, "Score: ");
 	char scoreStr[15];
 	sprintf_s(scoreStr, "%d", score);// cast score to new char array variable
 	displayTextLarge(328, 20, 1, 1, 1, scoreStr);
+
+	displayTextSmall(680, 450, 1, 1, 1, "Fps: " + ups);
 
 	if(health <= 0)
 	{
@@ -327,7 +348,7 @@ void drawGUI()
 }
 
 /***************************************************
-	Draw flashing cool blue warp
+	<-- Draw flashing cool blue warp -->
 ****************************************************/
 void drawWarp()
 {
@@ -340,12 +361,12 @@ void drawWarp()
 		animGroundColor = true;
 	}
 	glColor3f(0,0,.5);
-// Vertical line drawing
+	// Vertical line drawing
 
 	glColor3f(0,0,.75);
 
 	glLineWidth(.5);
-// Player movement lines
+	// Player movement lines
 	
 	glBegin(GL_POLYGON);// L
 		glVertex2i(275, 240);
@@ -398,9 +419,9 @@ void drawWarp()
 	
 }
 
-/****************************************************************
-	Draws blue line space area to create a pseudo 3d perspective
-*****************************************************************/
+/************************************************************************
+	<-- Draws blue line space area to create a pseudo 3d perspective -->
+************************************************************************/
 void drawWormhole()
 {	
 	if(animGroundColor == true)
@@ -624,22 +645,23 @@ void drawWormhole()
 	glEnd();	
 }
 
-/*******************************************
-	Reset all neccessary values in level
-********************************************/
+/************************************************
+	<-- Reset all neccessary values in level -->
+*************************************************/
 void restartLvl()
 {
-	health = 20;
+	health = 5;
 	shipEnergy = 20;
+	shieldAmt = 20;
 	score = 0;
 	hasGameStarted = false;
 	init();
 }
 
-/***********************************************
- * Processes input for normal keyboard keys
+/************************************************
+ <-- Processes input for normal keyboard keys -->
  key : corresponding keyboard char 
- ***********************************************/
+ ************************************************/
 void processNormalKeys(unsigned char key, int mx, int my)
 {
 	 if(key == 'E')
@@ -713,10 +735,10 @@ void processNormalKeys(unsigned char key, int mx, int my)
 	}
 }
 
-/***********************************************
-  Processes input for special keyboard keys
+/***************************************************
+  <-- Processes input for special keyboard keys -->
   key: ascii number associated with char  
- ***********************************************/
+ **************************************************/
 void processSpecialKeys(int key, int mx, int my)
 {
 	 switch(key)
@@ -770,7 +792,7 @@ void processSpecialKeys(int key, int mx, int my)
 }
 
 /*************************************************
-	Fire a single projectile forward
+	<-- Fire a single projectile forward -->
 **************************************************/
 void shoot()
 {
@@ -806,9 +828,9 @@ void shoot()
 	}			
 }
 
-/*******************************************
-	Initialize GL camera and perspective
-********************************************/
+/************************************************
+	<-- Initialize GL camera and perspective -->
+************************************************/
 void init()
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -821,10 +843,10 @@ void init()
 	gluOrtho2D(0, width, height, 0);
 }
 
-/********************************************
-	Main update function which updates entity data in level
+/*******************************************************************
+	<-- Main update function which updates entity data in level -->
 	i: state value for glutTimerFunc
-*********************************************/
+*******************************************************************/
 void update(int i)
 {
 	ups++;
@@ -844,9 +866,9 @@ void update(int i)
 	glutTimerFunc(1000/60, update, 1);
 }
 
-/*********************************************************
-	Triggers updates for all types of entities in level
-***********************************************************/
+/****************************************************************
+	<-- Triggers updates for all types of entities in level -->
+****************************************************************/
 void updateEntities()
 {
 	updateBulletEntities();
@@ -859,7 +881,7 @@ void updateEntities()
 }
 
 /*************************************************
-	Update explosion particles in level
+	<-- Update explosion particles in level -->
 **************************************************/
 void updateParticleEntities()
 {
@@ -883,7 +905,7 @@ void updateParticleEntities()
 }
 
 /***************************************************
-	Update Enemy entities in level
+	<-- Update Enemy entities in level -->
 ***************************************************/
 void updateEnemyEntities()
 {
@@ -956,7 +978,7 @@ void updateEnemyEntities()
 }
 
 /*******************************************************
-	Update energy entities in level
+	<-- Update energy entities in level -->
 ********************************************************/
 void updateEnergyEntities()
 {
@@ -992,9 +1014,9 @@ void updateEnergyEntities()
 	}
 }
 
-/*********************************************
-	Updates player projectiles in level
-*********************************************/
+/***********************************************
+	<-- Updates player projectiles in level -->
+***********************************************/
 void updateBulletEntities()
 {
 	for(int i = 0; i < amtBullets; i++)
@@ -1035,9 +1057,9 @@ void updateBulletEntities()
 	}
 }
 
-/**********************************************************************************************
-	Checks collision between various entities in the level between the players bullets and ship. 
-***********************************************************************************************/
+/********************************************************************************************************
+	<-- Checks collision between various entities in the level between the players bullets and ship. -->
+********************************************************************************************************/
 void checkCollision()
 {
 	if(energyEntities[0].x <= deltax + 40 && energyEntities[0].x >= deltax - 20 && energyEntities[0].y >= deltay - 20 && energyEntities[0].y <= deltay)
@@ -1054,7 +1076,17 @@ void checkCollision()
 
 	if(alienEntities[0].x <= deltax + 35 && alienEntities[0].x >= deltax - 50 && alienEntities[0].y >= deltay - 10 && alienEntities[0].y <= deltay )
 	{
-		if(health > 0){	health -= 5;}
+		if(shieldAmt > 0)
+		{ 
+			shieldAmt -= 5;
+		}
+		else 
+		{	
+			if (health > 0)
+			{
+				health -= 5;
+			}
+		}
 
 		alienEntities[0].lane = rand() %  5;
 		alienEntities[0].x = oppLanes[alienEntities[0].lane].x;
@@ -1063,7 +1095,18 @@ void checkCollision()
 
 	if(cometEntities[0].x <= deltax + 35 && cometEntities[0].x >= deltax - 50 && cometEntities[0].y >= deltay - 10 && cometEntities[0].y <= deltay )
 	{
-		if(health > 0){	health -= 5;}
+		if (shieldAmt > 0)
+		{
+			shieldAmt -= 5;
+		}
+		else
+		{
+			if (health > 0)
+			{
+				health -= 5;
+			}
+		}
+
 
 		cometEntities[0].lane = rand() %  5;
 		cometEntities[0].x = oppLanes[cometEntities[0].lane].x;
@@ -1096,11 +1139,11 @@ void checkCollision()
 	}
 }
 
-/*************************************************
-	Populate particleEntities list on entity death
+/***********************************************************
+	<-- Populate particleEntities list on entity death -->
 	x : x position on the screen to be later drawn
 	y : y position on the screen to be later drawn
-**************************************************/
+***********************************************************/
 void createExplosion(int x, int y)
 {
 	for(int i = 0; i < 16; i++)
@@ -1117,7 +1160,7 @@ void createExplosion(int x, int y)
 }
 
 /*****************************************************
-	Draws explosion on entity death
+	<-- Draws explosion on entity death -->
 ******************************************************/
 void drawExplosions()
 {
@@ -1137,9 +1180,9 @@ void drawExplosions()
 	}
 }
 
-/******************************************
-	Draws player character to screen
-*******************************************/
+/*********************************************
+	<-- Draws player character to screen -->
+*********************************************/
 void drawPlayer()
 {
 	glColor3f(1.0, 1.0, 0.0);// set color to same as background(black)
@@ -1170,9 +1213,9 @@ void drawPlayer()
 	glDisable(GL_POLYGON_STIPPLE);// enable polygon texture to render stipple pattern
 }
 
-/*********************************
-Move/Rotate Player and Aliens
-************************************/
+/*****************************************
+	<-- Move/Rotate Player and Aliens -->
+*****************************************/
 void translate()
 {
 	glClear(GL_COLOR_BUFFER_BIT);// clears all buffers whose bits are set in mask
@@ -1303,7 +1346,7 @@ void translate()
 }
 
 /************************************************************************
-	Displays text to screen
+	<-- Displays text to screen -->
 	x: x position on screen to be drawn
 	y: y position on screen to be drawn
 	r: red color value of text
@@ -1326,7 +1369,7 @@ void displayTextLarge( float x, float y, int r, int g, int b, const char *string
 }
 
 /************************************************************************
-	Displays text to screen
+	<-- Displays text to screen -->
 	x: x position on screen to be drawn
 	y: y position on screen to be drawn
 	r: red color value of text
@@ -1344,12 +1387,12 @@ void displayTextSmall( float x, float y, int r, int g, int b, const char *string
 	// loop thru each charcter and display
 	for(i = 0; i < j; i++ ) 
 	{
-		glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_10, string[i] );
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, string[i] );
 	}
 }
 
 /**********************************************
-	Draw player projectiles
+	<-- Draw player projectiles -->
 ***********************************************/
 void drawPlayerBullets()
 {
@@ -1374,7 +1417,7 @@ void drawPlayerBullets()
 }
 
 /*********************************
-	Draw comet entity
+	<-- Draw comet entity -->
 **********************************/
 void drawComet()
 {
@@ -1391,7 +1434,7 @@ void drawComet()
 }
 
 /***********************************
-	Draw energy entity
+	<-- Draw energy entity -->
 ************************************/
 void drawEnergy()
 {
@@ -1407,7 +1450,7 @@ void drawEnergy()
 }
 
 /****************************************
-	Create new star based on type
+	<-- Create new star based on type -->
 	i: star index in array
 	d: max position star can move
 ****************************************/
@@ -1435,7 +1478,7 @@ void newStar(GLint i, GLint d)
 }
 
 /*********************************************
-	Move/update star positions
+	<-- Move/update star positions -->
 *********************************************/
 void moveStars()
 {
@@ -1461,10 +1504,10 @@ void moveStars()
 	}
 }
 
-/*****************************
-	Find absolute star position
+/***************************************
+	<-- Find absolute star position -->
 	i: star index in array
-*****************************/
+***************************************/
 GLenum starPoint(GLint i)
 {
 	float x0, y0;
@@ -1485,7 +1528,7 @@ GLenum starPoint(GLint i)
 }
 
 /****************************************
-	Draw start to screen
+	<-- Draw start to screen -->
 	i: star index in array
 *****************************************/
 void drawStar(GLint i)
@@ -1540,9 +1583,9 @@ void drawStar(GLint i)
 	}
 }
 
-/****************************************
-	Update/create stars based on speed
-****************************************/
+/**********************************************
+	<-- Update/create stars based on speed -->
+**********************************************/
 void updateStars()
 {
 	GLint n;
@@ -1563,9 +1606,9 @@ void updateStars()
 	}
 }
 
-/*****************************
-	Draw stars to screen
-******************************/
+/*********************************
+	<-- Draw stars to screen -->
+*********************************/
 void drawStars()
 {
 	GLint n;
@@ -1580,7 +1623,7 @@ void drawStars()
 }
 
 /**********************************************************
-	Update and move stars during idle callback
+	<-- Update and move stars during idle callback -->
 **********************************************************/
 void idle()
 {
@@ -1611,7 +1654,7 @@ void idle()
 }
 
 /*********************************************
-	Set idle func based on state
+	<-- Set idle func based on state -->
 	state: int value on whether glut is visible
 ***********************************************/
 void visible(int state)
@@ -1626,9 +1669,9 @@ void visible(int state)
 	}
 }
 
-/************************************************************
-	Initializes the lanes,positions and entities in level before the game starts 
-************************************************************/
+/*****************************************************************************************
+	<-- Initializes the lanes,positions and entities in level before the game starts -->
+*****************************************************************************************/
 void initLevel()
 {
 	float angle;
@@ -1753,9 +1796,9 @@ void initLevel()
 	glDisable(GL_DITHER);
 }
 
-/*******************************************
-	Returns a random integer thats either 1 or -1
-********************************************/
+/*********************************************************
+	<-- Returns a random integer thats either 1 or -1 -->
+*********************************************************/
 int nextGaussian()
 {
 	int r ;
@@ -1765,17 +1808,17 @@ int nextGaussian()
 	
 }
 
-/*****************
-	Get Sin angle
-*****************/
+/**************************
+	<-- Get Sin angle -->
+**************************/
 float sinAngle(float angle)
 {
   return (sinTable[(GLint) angle]);
 }
 
-/******************
-	Get Cos angle
-*******************/
+/*************************
+	<-- Get Cos angle -->
+*************************/
 float cosAngle(float angle)
 {
   return (sinTable[((GLint) angle + (MAXANGLES / 4)) % MAXANGLES]);
