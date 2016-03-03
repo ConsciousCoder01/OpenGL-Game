@@ -338,8 +338,6 @@ void drawGUI()
 	sprintf_s(scoreStr, "%d", score);// cast score to new char array variable
 	displayTextLarge(328, 20, 1, 1, 1, scoreStr);
 
-	displayTextSmall(680, 450, 1, 1, 1, "Fps: " + ups);
-
 	if(health <= 0)
 	{
 		displayTextLarge(220, 60, 1, 1, 1, "Game Over!..");
@@ -664,7 +662,7 @@ void restartLvl()
  ************************************************/
 void processNormalKeys(unsigned char key, int mx, int my)
 {
-	 if(key == 'E')
+	 if(key == 'e')
 	 {
 		 restartLvl();
 	 }
@@ -1713,7 +1711,6 @@ void initLevel()
 		alienEntities[0].x = oppLanes[2].x;
 		alienEntities[0].y = oppLanes[2].y;
 	}
-
 
 	cometEntities[0].lane = 2;
 	if(cometEntities[0].lane == 0 || cometEntities[0].lane == 1)
