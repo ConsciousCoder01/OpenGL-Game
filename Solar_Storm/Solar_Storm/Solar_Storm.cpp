@@ -6,11 +6,12 @@
 
 #include "stdafx.h"
 #include <iostream>
+#include <stdlib.h>// for rnd number class
 #include "GL/glut.h"
 #include "GL/GL.H"
 #include <math.h>
-#include <stdlib.h>// for rnd number class
 #include <time.h>
+#include "Star.h"
 
 using namespace std;
 
@@ -61,12 +62,10 @@ void drawEnergy(); // draw energy
 void drawAliens(); // draw alien enemies
 void drawComet(); // draw comet
 void drawWormhole(); // draw warped wormhole
-void drawStars();
 void createExplosion(int x, int y); // create explosion on enemy death
 void drawExplosions(); // draw explosion
 void checkCollision(); // check for collision
 void translate(); // move player
-int nextGaussian(); // return 1 or -1
 void displayTextLarge(float x, float y, int r, int g, int b, const char *string);
 void displayTextSmall(float x, float y, int r, int g, int b, const char *string);
 void restartLvl();
@@ -84,12 +83,6 @@ void updateParticleEntities();
 void processNormalKeys(unsigned char key, int mx, int my);
 void processSpecialKeys(int key, int mx, int my);
 void shoot(); // fire projectile
-
-// <-- star functions -->
-void visible(int state);
-void idle();
-float cosAngle(float angle);
-float sinAngle(float angle);
 
 static float PI = 3.1459; // approx for PI
 static float radius = 75; // radius of circle
@@ -178,33 +171,11 @@ Comet cometEntities[12];
 Alien alienEntities[6];
 RGB rgb[5];
 
-// star variables
-#define MAXSTARS 75
-#define MAXPOS 10000
-#define MAXWARP 2
-#define MAXANGLES 6000
 
-typedef struct Star 
-{
-	GLint type;
-	float x[2], y[2], z[2];
-	float offsetX, offsetY, offsetR, rotation;
-} Star;
-
-enum
-{
-	STREAK = 0, // stretched
-	NORM = 1	  // dot
-};
 
 GLenum doubleBuffer;
-GLint windW = width, windH = height;
 
-GLint starCount = MAXSTARS / 2;
-float speed = 1.0;
-GLint nitro = 0;
-Star stars[MAXSTARS];
-float sinTable[MAXANGLES];
+
 
 int main(int argc, char *argv[])
 {
@@ -214,7 +185,7 @@ int main(int argc, char *argv[])
 	glutInitWindowPosition(0, 0);// init size of viewing window
 	glutCreateWindow("Solar Storm");// positions window at upper left hand corner
 	
-	glutVisibilityFunc(visible);
+	glutVisibilityFunc(Visible);
 	glutDisplayFunc(displayFirst);// called each time there is a display call back
 
 	glutKeyboardFunc(processNormalKeys); // init normal keyboard keys handler
@@ -856,7 +827,7 @@ void update(int i)
 
 	if(hasGameStarted)
 	{
-		idle();
+		Idle();
 		updateEntities();
 		checkCollision();
 	}
@@ -1150,8 +1121,8 @@ void createExplosion(int x, int y)
 		particleEntities[i].y = y;
 		particleEntities[i].life = 24;
 		particleEntities[i].time = 0;
-		particleEntities[i].xa = nextGaussian(); // return num -1 or 1
-		particleEntities[i].ya = nextGaussian();
+		particleEntities[i].xa = NextGaussian(); // return num -1 or 1
+		particleEntities[i].ya = NextGaussian();
 		particleEntities[i].isVisible = true;
 		particleEntities[i].color = rand() % 5;
 	}
@@ -1336,7 +1307,7 @@ void translate()
 
 	drawExplosions();
 
-	drawStars();
+	DrawStars();
 
 	glutSwapBuffers();
 	glFlush();
@@ -1447,233 +1418,13 @@ void drawEnergy()
 	glEnd();
 }
 
-/****************************************
-	<-- Create new star based on type -->
-	i: star index in array
-	d: max position star can move
-****************************************/
-void newStar(GLint i, GLint d)
-{
-	if (rand() % 4 == 0) 
-	{
-		stars[i].type = NORM;
-	} 
-	else
-	{
-		stars[i].type = STREAK;
-	}
-
-	stars[i].x[0] = (float) (rand() % MAXPOS - MAXPOS / 2);
-	stars[i].y[0] = (float) (rand() % MAXPOS - MAXPOS / 2);
-	stars[i].z[0] = (float) (rand() % MAXPOS + d);
-	stars[i].x[1] = stars[i].x[0];
-	stars[i].y[1] = stars[i].y[0];
-	stars[i].z[1] = stars[i].z[0];
-
-	stars[i].offsetX = 0.0;
-	stars[i].offsetY = 0.0;
-	stars[i].offsetR = 0.0;	
-}
-
-/*********************************************
-	<-- Move/update star positions -->
-*********************************************/
-void moveStars()
-{
-	float offset;
-	GLint i;
-
-	offset = speed * 60.0;
-
-	for (i = 0; i < starCount; i++)
-	{
-		stars[i].x[1] = stars[i].x[0];
-		stars[i].y[1] = stars[i].y[0];
-		stars[i].z[1] = stars[i].z[0];
-		stars[i].x[0] += stars[i].offsetX;
-		stars[i].y[0] += stars[i].offsetY;
-		stars[i].z[0] -= offset;
-		stars[i].rotation += stars[i].offsetR;
-    
-		if (stars[i].rotation > MAXANGLES)
-		{
-			stars[i].rotation = 0.0;
-		}
-	}
-}
-
-/***************************************
-	<-- Find absolute star position -->
-	i: star index in array
-***************************************/
-GLenum starPoint(GLint i)
-{
-	float x0, y0;
-
-	x0 = stars[i].x[0] * windW / stars[i].z[0];
-	y0 = stars[i].y[0] * windH / stars[i].z[0];
-	x0 += windW / 2.0;
-	y0 += windH / 2.0;
-
-	if (x0 >= 0.0 && x0 < windW && y0 >= 0.0 && y0 < windH)
-	{
-		return GL_TRUE;
-	} 
-	else 
-	{
-		return GL_FALSE;
-	}
-}
-
-/****************************************
-	<-- Draw start to screen -->
-	i: star index in array
-*****************************************/
-void drawStar(GLint i)
-{
-	float x0, y0, x1, y1, width;
-	x0 = stars[i].x[0] * windW / stars[i].z[0];
-	y0 = stars[i].y[0] * windH / stars[i].z[0];
-	
-	x0 += windW / 2.0;
-	y0 += windH / 2.0;
-
-	if (x0 >= 0.0 && x0 < windW && y0 >= 0.0 && y0 < windH) 
-	{
-		if (stars[i].type == STREAK) 
-		{
-			x1 = stars[i].x[1] * windW / stars[i].z[1];
-			y1 = stars[i].y[1] * windH / stars[i].z[1];
-			x1 += windW / 2.0;
-			y1 += windH / 2.0;
-
-			glLineWidth(MAXPOS / 100.0 / stars[i].z[0] + 1.0);
-			glColor3f(1.0,1.0,1.0);
-
-			if (fabs(x0 - x1) < 1.0 && fabs(y0 - y1) < 1.0)
-			{
-				glBegin(GL_POINTS);
-				glVertex2f(x0, y0);
-				glEnd();
-			}	
-			else
-			{
-				glBegin(GL_LINES);
-					glVertex2f(x0, y0);
-					glVertex2f(x1, y1);
-				glEnd();
-			}
-		} 
-		else 
-		{
-			width = MAXPOS / 10.0 / stars[i].z[0] + 1.0;
-			glColor3f(1.0, 1.0, 0.0);
-				
-			glBegin(GL_POLYGON);
-				for (i = 0; i < 8; i++) 
-				{
-					float x = x0 + width * cosAngle((float) i * MAXANGLES / 8.0);
-					float y = y0 + width * sinAngle((float) i * MAXANGLES / 8.0);
-					glVertex2f(x, y);
-				};
-			glEnd();
-		}
-	}
-}
-
-/**********************************************
-	<-- Update/create stars based on speed -->
-**********************************************/
-void updateStars()
-{
-	GLint n;
-
-	for (n = 0; n < starCount; n++) 
-	{
-		if (stars[n].z[0] > speed || (stars[n].z[0] > 0.0 && speed < MAXWARP))
-		{
-			if (starPoint(n) == GL_FALSE)
-			{
-				newStar(n, MAXPOS);
-			}
-		} 
-		else 
-		{
-			newStar(n, MAXPOS);
-		}
-	}
-}
-
-/*********************************
-	<-- Draw stars to screen -->
-*********************************/
-void drawStars()
-{
-	GLint n;
-
-    for (n = 0; n < starCount; n++) 
-    {
-		if (stars[n].z[0] > speed || (stars[n].z[0] > 0.0 && speed < MAXWARP)) 
-		{
-			drawStar(n);
-		}
-	 }
-}
-
-/**********************************************************
-	<-- Update and move stars during idle callback -->
-**********************************************************/
-void idle()
-{
-	moveStars();
-	updateStars();
-
-	if (nitro > 0)
-	{
-		speed = (float) (nitro / 10) + 1.0;
-		if (speed > MAXWARP) 
-		{
-			speed = MAXWARP;
-		}
-		if (++nitro > MAXWARP * 10)
-		{
-			nitro = -nitro;
-		}
-  } 
-  else if (nitro < 0) 
-  {
-		nitro++;
-		speed = (float) (-nitro / 10) + 1.0;
-		if (speed > MAXWARP) 
-		{
-			speed = MAXWARP;
-		}
-  }
-}
-
-/*********************************************
-	<-- Set idle func based on state -->
-	state: int value on whether glut is visible
-***********************************************/
-void visible(int state)
-{
-	if (state == GLUT_VISIBLE)
-	{
-		glutIdleFunc(idle);
-	}
-	else 
-	{
-		glutIdleFunc(NULL);
-	}
-}
-
 /*****************************************************************************************
 	<-- Initializes the lanes,positions and entities in level before the game starts -->
 *****************************************************************************************/
 void initLevel()
 {
-	float angle;
-    GLint n;
+	//float angle;
+    //GLint n;
 
 	lanes[0].x = 0;
 	lanes[0].y = 363;
@@ -1773,50 +1524,11 @@ void initLevel()
 	rgb [5].g = 1.0;
 	rgb [5].b = 1.0;
 
-	// init stars
-	srand((unsigned int) time(NULL));
-
-	 for (n = 0; n < MAXSTARS; n++) 
-	 {
-		newStar(n, 100);
-	 }
-
-	angle = 0.0;
-	for (n = 0; n <= MAXANGLES; n++) 
-	{
-		sinTable[n] = sin(angle);
-		angle += PI / (MAXANGLES / 2.0);
-	}
+	StarInit();
 
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	glDisable(GL_DITHER);
 }
 
-/*********************************************************
-	<-- Returns a random integer thats either 1 or -1 -->
-*********************************************************/
-int nextGaussian()
-{
-	int r ;
-	r =  -1 + rand() % (2 - -2); //  LO + rand() % (HI - LO);
-	
-	return r;
-	
-}
 
-/**************************
-	<-- Get Sin angle -->
-**************************/
-float sinAngle(float angle)
-{
-  return (sinTable[(GLint) angle]);
-}
-
-/*************************
-	<-- Get Cos angle -->
-*************************/
-float cosAngle(float angle)
-{
-  return (sinTable[((GLint) angle + (MAXANGLES / 4)) % MAXANGLES]);
-}
